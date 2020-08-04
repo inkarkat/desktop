@@ -14,7 +14,7 @@ This is intended to be installed as a (ana)cron job to run daily. When using for
 
     $ sudo -H ln -s ~/Unixhome/bin/ingo/shell-windows/config/email-window-title-report /etc/cron.daily/email-window-title-report
 
-When using it for somebody else, create a wrapper file `/etc/cron.daily/email-window-title-report-somebody` instead:
+When using it for / sending to somebody else, create a wrapper file `/etc/cron.daily/email-window-title-report-somebody` instead:
 
     #!/bin/sh
     REPORT_USER=somebody REPORT_EMAIL=somebody@example.com exec ~/Unixhome/bin/ingo/shell-windows/config/email-window-title-report
