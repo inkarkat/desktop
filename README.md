@@ -10,18 +10,17 @@ To automatically start the recording when logging in, put the launcher into the 
 
 ### full-window-title-report
 
-This is intended to be installed as an (ana)cron job to run daily. When using for myself, I can just symlink it:
+You can use this to get an overview about what you've done today so far, or to cover larger timespans of the past. But this is mostly used for the automatically generated email reports.
 
-    $ sudo ln -s ~/Unixhome/bin/ingo/shell-windows/config/email-window-title-report /etc/cron.daily/email-window-title-report
+### email-window-title-report
 
-The script will relaunch itself (`REPORTER_USER`) when it is started under the superuser.
+This is intended to be installed as an (ana)cron job to run daily. When using it for myself, I can just symlink it:
 
-To customize the reporting, create a wrapper file `/etc/cron.daily/email-window-title-report-somebody` instead.
+    $ sudo ln -s {~/bin/ingo/shell-windows/etc/email-window-title-report,/etc/cron.daily}/email-window-title-report-job
 
-- The user for which the reporting is done is specified as `REPORTEE_USER`; the user who runs the report needs to have read access to that user's reports.
-- The (comma-separated) recipient(s) of the report are specified by `REPORT_EMAIL`.
+(The script will relaunch itself as myself when it is started under the superuser by cron.)
 
-    #!/bin/sh
-    REPORTEE_USER=somebody REPORT_EMAIL=somebody@example.com exec ~/Unixhome/bin/ingo/shell-windows/config/email-window-title-report
+#### configuration
 
-- A different `REPORTER_USER` can do the reporting; however, that user then needs to have my Unixhome installed in their home directory.
+Reporting needs at least the recipient email address. You can use one of the example configurations in the [config/email-window-title-report/](config/email-window-title-report/) subdirectory, or create your own; [config/email-window-title-report/template.conf](config/email-window-title-report/template.conf) documents all possible values.
+This must be copied into `~/.config/email-window-title-report/*.conf`; each shell script there is sourced and triggers one report.
