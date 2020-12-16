@@ -6,7 +6,7 @@ A collection of tools for windows, window manager configuration, and information
 
 To automatically start the recording when logging in, put the launcher into the autostart group:
 
-    $ cp ~/Unixhome/bin/ingo/shell-windows/config/record-window-titles.desktop ~/.config/autostart/
+    $ cp ~/Unixhome/bin/ingo/shell-windows/config/record-window-titles/record-window-titles.desktop ~/.config/autostart/
 
 ### full-window-title-report
 
