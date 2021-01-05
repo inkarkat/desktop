@@ -1,0 +1,28 @@
+#!/bin/bash
+shopt -qs nullglob
+
+printUsage()
+{
+    cat <<HELPTEXT
+List all startup applications (with -l|--long: with description) defined for the
+current user.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-l|--long] [-?|-h|--help]'
+}
+typeset -a describeArgs=()
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+    --long|-l)		describeArgs+=("$1"); shift;;
+esac
+if [ $# -gt 0 ]; then
+    printUsage "$0" >&2
+    exit 2
+fi
+
+status=1
+for desktopEntry in ~/.config/autostart/*.desktop
+do
+    describeDesktopEntry "${describeArgs[@]}" "$desktopEntry" && status=0
+done
+exit $status
