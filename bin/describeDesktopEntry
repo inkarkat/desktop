@@ -6,13 +6,14 @@ printUsage()
 Return name (and description with -l|--long) from the passed DESKTOP-ENTRY.
 HELPTEXT
     echo
-    printf 'Usage: %q %s\n' "$(basename "$1")" '[-l|--long] DESKTOP-ENTRY [-?|-h|--help]'
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-l|--long] [--] DESKTOP-ENTRY [-?|-h|--help]'
 }
 
 isLong=
 case "$1" in
     --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
     --long|-l)		shift; isLong=t;;
+    --)			shift;;
 esac
 if [ $# -ne 1 ]; then
     printUsage "$0" >&2
