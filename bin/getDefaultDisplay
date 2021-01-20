@@ -1,0 +1,23 @@
+#!/bin/bash
+# Source:
+#   https://unix.stackexchange.com/questions/491344/ubuntu-18-04-1-lts-default-display-value
+#   https://askubuntu.com/questions/910108/why-is-my-gdm-at-a-different-tty-than-my-desktop-environment
+printUsage()
+{
+    cat <<HELPTEXT
+Print the default display (usually :0 or nowadays :1 (since Ubuntu 18.04, Gnome
+launches the X server and Wayland server within the user's session, and there's
+a separate one running as root for the login screen only)).
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-?|-h|--help]'
+}
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+esac
+
+defaultDisplayNumber=0
+< <(lsb_release -sr 2>/dev/null) IFS='.' read -r major minor
+[ "$major" -ge 18 ] && defaultDisplayNumber=1
+
+printf ':%d\n' "$defaultDisplayNumber"
