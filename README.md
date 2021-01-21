@@ -14,13 +14,21 @@ You can use this to get an overview about what you've done today so far, or to c
 
 ### email-window-title-report
 
-This is intended to be installed as an (ana)cron job to run daily. When using it for myself, I can just symlink it:
+This is intended to be executed as an (ana)cron job to run daily. You can automatically configure it via:
+
+    $ setup-email-window-title-report
+
+If you want to do it manually, here are some more details:
+
+#### email job
+
+When using it for myself, I can just symlink it:
 
     $ sudo ln -s {~/bin/ingo/shell-windows/etc/email-window-title-report,/etc/cron.daily}/email-window-title-report-job
 
 (The script will relaunch itself as myself when it is started under the superuser by cron.)
 
-#### configuration
+#### email configuration
 
 Reporting needs at least the recipient email address. You can use one of the example configurations in the [config/email-window-title-report/](config/email-window-title-report/) subdirectory, or create your own; [config/email-window-title-report/template.conf](config/email-window-title-report/template.conf) documents all possible values.
 This must be copied into `~/.config/email-window-title-report/*.conf`; each shell script there is sourced and triggers one report.
