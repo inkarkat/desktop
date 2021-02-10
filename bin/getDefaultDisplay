@@ -18,6 +18,6 @@ esac
 
 defaultDisplayNumber=0
 < <(lsb_release -sr 2>/dev/null) IFS='.' read -r major minor
-[ "$major" -ge 18 ] && defaultDisplayNumber=1
+[ ${major:-0} -ge 18 ] && defaultDisplayNumber=1
 
 printf ':%d\n' "$defaultDisplayNumber"
