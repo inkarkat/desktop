@@ -6,8 +6,9 @@ printUsage()
 {
     cat <<HELPTEXT
 Print the default display (usually :0 or nowadays :1 (since Ubuntu 18.04, Gnome
-launches the X server and Wayland server within the user's session, and there's
-a separate one running as root for the login screen only)).
+(but not the default Unity) launches the X server and Wayland server within the
+user's session, and there's a separate one running as root for the login screen
+only)).
 HELPTEXT
     echo
     printf 'Usage: %q %s\n' "$(basename "$1")" '[-?|-h|--help]'
@@ -18,6 +19,6 @@ esac
 
 defaultDisplayNumber=0
 < <(lsb_release -sr 2>/dev/null) IFS='.' read -r major minor
-[ ${major:-0} -ge 18 ] && defaultDisplayNumber=1
+[ ${major:-0} -ge 18 -a "$XDG_SESSION_DESKTOP" = gnome-flashback-metacity ] && defaultDisplayNumber=1
 
 printf ':%d\n' "$defaultDisplayNumber"
