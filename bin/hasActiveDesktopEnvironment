@@ -1,0 +1,25 @@
+#!/bin/bash
+
+printUsage()
+{
+    cat <<HELPTEXT
+Test for the currently used desktop environment.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" 'GLOB|gnome|gnome-flashback-metacity|ubuntu [...] [-?|-h|--help]'
+}
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+esac
+if [ $# -eq 0 ]; then
+    printUsage "$0" >&2
+    exit 2
+fi
+
+for desktopName
+do
+    case "$XDG_SESSION_DESKTOP" in
+	$1) exit 0;;
+    esac
+done
+exit 1
