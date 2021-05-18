@@ -1,0 +1,19 @@
+#!/bin/bash
+
+printUsage()
+{
+    cat <<HELPTEXT
+Test whether any / at least one of the passed desktop environment(s) is available.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[GLOB|gnome|gnome-flashback-metacity|ubuntu [...]] [-?|-h|--help]'
+}
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+esac
+[ $# -eq 0 ] && set -- '*'
+
+set -- "${@/#/\/usr\/share\/xsessions/}"
+set -- "${@/%/.desktop}"
+
+hasglobmatch "$@"
