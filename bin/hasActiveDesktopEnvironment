@@ -19,8 +19,8 @@ fi
 
 for desktopName
 do
-    eval "case \"\$XDG_SESSION_DESKTOP\" in
-	$1) exit 0;;
-    esac"
+    case "$XDG_SESSION_DESKTOP" in
+	@($1)) exit 0;;
+    esac
 done
 exit 1
