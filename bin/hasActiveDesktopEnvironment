@@ -20,7 +20,7 @@ fi
 for desktopName
 do
     case "$XDG_SESSION_DESKTOP" in
-	@($1)) exit 0;;
+	@($desktopName)) exit 0;;
     esac
 done
 exit 1
