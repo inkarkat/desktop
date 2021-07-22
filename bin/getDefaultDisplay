@@ -19,6 +19,8 @@ esac
 
 defaultDisplayNumber=0
 < <(lsb_release -sr 2>/dev/null) IFS='.' read -r major minor
-[ ${major:-0} -ge 18 -a "$XDG_SESSION_DESKTOP" = gnome-flashback-metacity ] && defaultDisplayNumber=1
+[ ${major:-0} -ge 18 -a "$XDG_SESSION_DESKTOP" = gnome-flashback-metacity ] && \
+    [ $(pgrep --exact --count Xorg 2>/dev/null) -ge 2 ] && \
+    defaultDisplayNumber=1
 
 printf ':%d\n' "$defaultDisplayNumber"
