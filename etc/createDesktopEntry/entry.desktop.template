@@ -3,6 +3,6 @@ Name=$name
 Comment=$comment
 Exec=$command
 Icon=$icon
-Type=Application${autostart}${autostart:+
-}${categories:+
+Type=Application${autostart:+
+}${autostart}${categories:+
 Categories=}${categories}${categories:+;}
