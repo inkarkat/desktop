@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=$name
+Comment=$comment
+Exec=$command
+Icon=$iconName
+Type=Application${autostart}${autostart:+
+}${categories:+
+Categories=}$categories
