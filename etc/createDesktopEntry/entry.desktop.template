@@ -2,7 +2,7 @@
 Name=$name
 Comment=$comment
 Exec=$command
-Icon=$iconName
+Icon=$icon
 Type=Application${autostart}${autostart:+
 }${categories:+
 Categories=}$categories
