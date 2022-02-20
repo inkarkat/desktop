@@ -44,7 +44,8 @@ HELPDESCRIPTION
 			instead of the start menu.
     --destination|-d DESTINATION-DIR
 			Place the desktop entry into DESTINATION-DIR.
-    --force|-f		Override an existing desktop entry.
+    --force|-f		Overwrite an existing desktop entry.
+    DESKTOP-ENTRY	The filename of the desktop entry to be created.
 
 RELATED COMMANDS:
 - addToStartMenu, addToAutostart, and addDesktopEntry can be used to install an
@@ -90,7 +91,12 @@ if [ $# -ne 1 ]; then
     exit 2
 fi
 desktopEntryName="${1:?}"; shift
-if [ -z "$command" ]; then
+if [[ "$desktopEntryName" =~ / ]]; then
+    echo 'ERROR: DESKTOP-ENTRY must be a pure name, not a path.'
+    echo
+    printUsage "$0"
+    exit 2
+elif [ -z "$command" ]; then
     echo 'ERROR: No -e|--exec COMMAND passed.'
     echo
     printUsage "$0"
@@ -98,7 +104,7 @@ if [ -z "$command" ]; then
 fi >&2
 [ -n "$name" ] || name="$(commandName --no-interpreter --eval "$command")" || name="$command"
 
-desktopEntryFilespec="${destinationDirspec%/}/${desktopEntryName}.desktop"
+desktopEntryFilespec="${destinationDirspec%/}/${desktopEntryName%.desktop}.desktop"
 if [ -e "$desktopEntryFilespec" ] && [ ! "$isForce" ]; then
     printf >&2 'ERROR: Desktop entry already exists at: %s\n' "$desktopEntryFilespec"
     exit 1
