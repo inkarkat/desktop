@@ -5,4 +5,4 @@ Exec=$command
 Icon=$icon
 Type=Application${autostart}${autostart:+
 }${categories:+
-Categories=}$categories
+Categories=}${categories}${categories:+;}
