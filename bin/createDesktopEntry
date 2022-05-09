@@ -12,7 +12,7 @@ printShortUsage()
 {
     # Note: short followed by long option; if the user knows the short one, she can
     # skim the long one.
-    printf 'Usage: %q %s\n' "$(basename "$1")" '-e|--exec COMMAND [-n|--name NAME] [-i|--icon ICON] [-c|--comment COMMENT] [-t|--category CATEGORY [-t ...]] [--autostart|-d|--destination DESTINATION-DIR] [-f|--force] DESKTOP-ENTRY [-?|-h|--help]'
+    printf 'Usage: %q %s\n' "$(basename "$1")" '-e|--exec COMMAND [-n|--name NAME] [-i|--icon ICON] [-c|--comment COMMENT] [-t|--category CATEGORY [-t ...]] [--autostart|-d|--destination DESTINATION-DIR] [-f|--force] --target-name DESKTOP-ENTRY|DESKTOP-ENTRY [-?|-h|--help]'
     printf 'Usage: %q %s\n' "$(basename "$1")" '--check ...'
 }
 printUsage()
@@ -50,7 +50,8 @@ HELPDESCRIPTION
     --destination|-d DESTINATION-DIR
 			Place the desktop entry into DESTINATION-DIR.
     --force|-f		Overwrite an existing desktop entry.
-    DESKTOP-ENTRY	The filename of the desktop entry to be created.
+    --target-name DESKTOP-ENTRY
+			The filename of the desktop entry to be created.
 
 RELATED COMMANDS:
 - addToStartMenu, addToAutostart, and addDesktopEntry can be used to install an
@@ -73,6 +74,8 @@ typeset -a categoryList=()
 destinationDirspec=~/.local/share/applications
 isForce=
 autostart=
+desktopEntryName=
+requiredArgNum=1
 isCheck=
 while [ $# -ne 0 ]
 do
@@ -88,16 +91,19 @@ do
 	--destination|-d)
 			shift; destinationDirspec="${1:?}"; shift;;
 	--force|-f)	shift; isForce=t;;
+	--target-name)	shift; desktopEntryName="${1:?}"; shift; requiredArgNum=0;;
 	--)		shift; break;;
 	-*)		{ echo "ERROR: Unknown option \"$1\"!"; echo; printUsage "$0"; } >&2; exit 2;;
 	*)		break;;
     esac
 done
-if [ $# -ne 1 ]; then
+if [ $# -ne $requiredArgNum ]; then
     printUsage "$0" >&2
     exit 2
 fi
-desktopEntryName="${1:?}"; shift
+if [ -z "$desktopEntryName" ]; then
+    desktopEntryName="${1:?}"; shift
+fi
 if [[ "$desktopEntryName" =~ / ]]; then
     echo 'ERROR: DESKTOP-ENTRY must be a pure name, not a path.'
     echo
