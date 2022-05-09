@@ -12,7 +12,8 @@ printShortUsage()
 {
     # Note: short followed by long option; if the user knows the short one, she can
     # skim the long one.
-    printf 'Usage: %q %s\n' "$(basename "$1")" '-e|--exec COMMAND [-n|--name NAME] [-i|--icon ICON] [-c|--comment COMMENT] [-t|--category CATEGORY [-t ...]] [--autostart|-d|--destination DESTINATION-DIR] [-f|--force] DESKTOP-ENTRY [-?|-h|--help]'
+    printf 'Usage: %q %s\n' "$(basename "$1")" '-e|--exec COMMAND [-n|--name NAME] [-i|--icon ICON] [-c|--comment COMMENT] [-t|--category CATEGORY [-t ...]] [--autostart|-d|--destination DESTINATION-DIR] [-f|--force] [--target-name DESKTOP-ENTRY|DESKTOP-ENTRY] [-?|-h|--help]'
+    printf 'Usage: %q %s\n' "$(basename "$1")" '--check ...'
 }
 printUsage()
 {
@@ -32,6 +33,8 @@ HELPDESCRIPTION
     printShortUsage "$1"
     echo
     cat <<HELPTEXT
+    --check		Check whether DESKTOP-ENTRY (and ICON) already exist (by
+			name, ignoring the contents).
     --exec|-e COMMAND	Execute COMMAND; for a complete command-line or
 			environment variable expansion, wrap in sh -c "COMMAND"
     --name|-n NAME	Use NAME instead of deriving it from COMMAND.
@@ -47,16 +50,17 @@ HELPDESCRIPTION
     --destination|-d DESTINATION-DIR
 			Place the desktop entry into DESTINATION-DIR.
     --force|-f		Overwrite an existing desktop entry.
-    DESKTOP-ENTRY	The filename of the desktop entry to be created.
+    --target-name DESKTOP-ENTRY
+			The filename of the desktop entry to be created.
 
 RELATED COMMANDS:
 - addToStartMenu, addToAutostart, and addDesktopEntry can be used to install an
   existing desktop entry
 
 EXIT STATUS:
-    0	Complete success.
+    0	Complete success / DESKTOP-ENTRY already exists.
     1	A DESKTOP-ENTRY already exists at the destination and no --force was
-	given.
+	given / DESKTOP-ENTRY or ICON do not exist yet.
     2	Bad invocation, wrong or missing command-line arguments.
     3	Internal error or failed assertion.
 HELPTEXT
@@ -70,10 +74,13 @@ typeset -a categoryList=()
 destinationDirspec=~/.local/share/applications
 isForce=
 autostart=
+desktopEntryName=
+isCheck=
 while [ $# -ne 0 ]
 do
     case "$1" in
 	--help|-h|-\?)	shift; printLongUsage "$0"; exit 0;;
+	--check)	shift; isCheck=t;;
 	--exec|-e)	shift; command="$1"; shift;;
 	--name|-n)	shift; name="$1"; shift;;
 	--icon|-i)	shift; icon="$1"; shift;;
@@ -83,16 +90,21 @@ do
 	--destination|-d)
 			shift; destinationDirspec="${1:?}"; shift;;
 	--force|-f)	shift; isForce=t;;
+	--target-name)	shift; desktopEntryName="${1:?}"; shift;;
 	--)		shift; break;;
 	-*)		{ echo "ERROR: Unknown option \"$1\"!"; echo; printUsage "$0"; } >&2; exit 2;;
 	*)		break;;
     esac
 done
-if [ $# -ne 1 ]; then
+if [ -z "$desktopEntryName" -a $# -gt 1 ]; then
+    desktopEntryName="${1:?}"; shift
+fi
+if [ $# -ne 0 ]; then
     printUsage "$0" >&2
     exit 2
 fi
-desktopEntryName="${1:?}"; shift
+[ -n "$name" ] || name="$(commandName --no-interpreter --eval "$command")" || name="$command"
+: ${desktopEntryName:="${name:?}"}
 if [[ "$desktopEntryName" =~ / ]]; then
     echo 'ERROR: DESKTOP-ENTRY must be a pure name, not a path.'
     echo
@@ -104,13 +116,8 @@ elif [ -z "$command" ]; then
     printUsage "$0"
     exit 2
 fi >&2
-[ -n "$name" ] || name="$(commandName --no-interpreter --eval "$command")" || name="$command"
 
 desktopEntryFilespec="${destinationDirspec%/}/${desktopEntryName%.desktop}.desktop"
-if [ -e "$desktopEntryFilespec" ] && [ ! "$isForce" ]; then
-    printf >&2 'ERROR: Desktop entry already exists at: %s\n' "$desktopEntryFilespec"
-    exit 1
-fi
 
 iconFilespec=
 if [[ "$icon" =~ / ]]; then
@@ -120,6 +127,15 @@ if [[ "$icon" =~ / ]]; then
     fi
     iconFilespec="$icon"
     icon="$(basename -- "$icon")"
+fi
+
+if [ "$isCheck" ]; then
+    [ -e "$desktopEntryFilespec" ] || exit 1
+    [ -z "$iconFilespec" ] || addIcon --check -- "$iconFilespec" || exit 1
+    exit 0
+elif [ -e "$desktopEntryFilespec" ] && [ ! "$isForce" ]; then
+    printf >&2 'ERROR: Desktop entry already exists at: %s\n' "$desktopEntryFilespec"
+    exit 1
 fi
 
 saveIFS="$IFS"
