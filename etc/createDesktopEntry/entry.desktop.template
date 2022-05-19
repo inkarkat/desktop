@@ -1,8 +1,8 @@
 [Desktop Entry]
-Name=$name
-Comment=$comment
-Exec=$command${icon:+
-Icon=}$icon
-Type=Application${autostart:+
-}${autostart}${categories:+
-Categories=}${categories}${categories:+;}
+Name=$desktopName
+Comment=$desktopComment
+Exec=$command${desktopIcon:+
+Icon=}$desktopIcon
+Type=Application${desktopAutostart:+
+}${desktopAutostart}${desktopCategories:+
+Categories=}${desktopCategories}${desktopCategories:+;}
