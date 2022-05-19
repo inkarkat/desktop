@@ -86,9 +86,22 @@ readTemplate()
 	fi
     done < "$sourceFilespec"
 }
+processIcon()
+{
+    desktopIcon="${1:?}"; shift
+    if [[ "$desktopIcon" =~ / ]]; then
+	if [ ! -r "$desktopIcon" ]; then
+	    printf >&2 'ERROR: Icon does not exist at %s\n', "$desktopIcon"
+	    exit 2
+	fi
+	iconFilespec="$desktopIcon"
+	desktopIcon="$(basename -- "$desktopIcon")"
+    fi
+}
 
 desktopExec=
 desktopName=
+iconFilespec=
 desktopIcon="$CREATEDESKTOPENTRY_DEFAULT_ICON"
 desktopComment=
 desktopCategories=
@@ -106,7 +119,7 @@ do
 	--template|-T)	shift; readTemplate "$1" || exit 2; shift;;
 	--exec|-e)	shift; desktopExec="$1"; shift;;
 	--name|-n)	shift; desktopName="$1"; shift;;
-	--icon|-i)	shift; desktopIcon="$1"; shift;;
+	--icon|-i)	shift; processIcon "$1"; shift;;
 	--comment|-c)	shift; desktopComment="$1"; shift;;
 	--category|-t)	shift; categoryList+=("$1"); shift;;
 	--autostart)	shift; destinationDirspec=~/.config/autostart; desktopAutostart='X-GNOME-Autostart-enabled=true';;
@@ -141,16 +154,6 @@ elif [ -z "$desktopExec" ]; then
 fi >&2
 
 targetFilespec="${destinationDirspec%/}/${desktopEntryName%.desktop}.desktop"
-
-iconFilespec=
-if [[ "$desktopIcon" =~ / ]]; then
-    if [ ! -r "$desktopIcon" ]; then
-	printf >&2 'ERROR: Icon does not exist at %s\n', "$desktopIcon"
-	exit 2
-    fi
-    iconFilespec="$desktopIcon"
-    desktopIcon="$(basename -- "$desktopIcon")"
-fi
 
 if [ "$isCheck" ]; then
     [ -e "$targetFilespec" ] || exit 1
