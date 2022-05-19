@@ -13,6 +13,7 @@ printShortUsage()
     # Note: short followed by long option; if the user knows the short one, she can
     # skim the long one.
     printf 'Usage: %q %s\n' "$(basename "$1")" '-e|--exec COMMAND [-n|--name NAME] [-i|--icon ICON] [-c|--comment COMMENT] [-t|--category CATEGORY [-t ...]] [--autostart|-d|--destination DESTINATION-DIR] [-f|--force] [--target-name DESKTOP-ENTRY|DESKTOP-ENTRY] [-?|-h|--help]'
+    printf 'Usage: %q %s\n' "$(basename "$1")" '-T|--template FILESPEC [...]'
     printf 'Usage: %q %s\n' "$(basename "$1")" '--check ...'
 }
 printUsage()
@@ -35,6 +36,9 @@ HELPDESCRIPTION
     cat <<HELPTEXT
     --check		Check whether DESKTOP-ENTRY (and ICON) already exist (by
 			name, ignoring the contents).
+    --template|-T FILESPEC
+			Use FILESPEC, either as-is or as a template where other
+			arguments add or override certain properties.
     --exec|-e COMMAND	Execute COMMAND; for a complete command-line or
 			environment variable expansion, wrap in sh -c "COMMAND"
     --name|-n NAME	Use NAME instead of deriving it from COMMAND.
@@ -66,10 +70,28 @@ EXIT STATUS:
 HELPTEXT
 }
 
+readTemplate()
+{
+    local sourceFilespec="${1:?}"; shift
+    if [ ! -r "$sourceFilespec" ]; then
+	printf >&2 'ERROR: Cannot read template: %s\n' "$sourceFilespec"
+	return 1
+    fi
+
+    while IFS='=' read -r key value
+    do
+	if [[ "$key" =~ ^[[:upper:]][[:lower:]]+$ ]]; then
+	    printf -v quotedValue %q "$value"
+	    eval "desktop${key}=${quotedValue}" || return 1
+	fi
+    done < "$sourceFilespec"
+}
+
 desktopExec=
 desktopName=
 desktopIcon="$CREATEDESKTOPENTRY_DEFAULT_ICON"
 desktopComment=
+desktopCategories=
 typeset -a categoryList=()
 destinationDirspec=~/.local/share/applications
 isForce=
@@ -81,6 +103,7 @@ do
     case "$1" in
 	--help|-h|-\?)	shift; printLongUsage "$0"; exit 0;;
 	--check)	shift; isCheck=t;;
+	--template|-T)	shift; readTemplate "$1" || exit 2; shift;;
 	--exec|-e)	shift; desktopExec="$1"; shift;;
 	--name|-n)	shift; desktopName="$1"; shift;;
 	--icon|-i)	shift; desktopIcon="$1"; shift;;
@@ -139,7 +162,7 @@ elif [ -e "$targetFilespec" ] && [ ! "$isForce" ]; then
 fi
 
 saveIFS="$IFS"
-IFS=';'; desktopCategories="${categoryList[*]}"
+IFS=';'; [ -n "$desktopCategories" ] || desktopCategories="${categoryList[*]}"
 IFS="$saveIFS"
 
 export ${!desktop@}
