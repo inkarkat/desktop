@@ -142,7 +142,7 @@ saveIFS="$IFS"
 IFS=';'; desktopCategories="${categoryList[*]}"
 IFS="$saveIFS"
 
-export desktopName desktopComment desktopExec desktopIcon desktopAutostart desktopCategories
+export ${!desktop@}
 shelltemplate --target "$targetFilespec" -- "$templateFilespec" || exit $?
 
 [ -z "$iconFilespec" ] || acceptStatus 0 4 99 -- addIcon --copy ${isForce:+--force} -- "$iconFilespec"

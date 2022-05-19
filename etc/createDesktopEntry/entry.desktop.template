@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=$desktopName
 Comment=$desktopComment
-Exec=$command${desktopIcon:+
+Exec=$desktopExec${desktopIcon:+
 Icon=}$desktopIcon
 Type=Application${desktopAutostart:+
 }${desktopAutostart}${desktopCategories:+
