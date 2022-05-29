@@ -129,7 +129,11 @@ do
 	--category|-t)	shift; categoryList+=("$1"); shift;;
 	--autostart)	shift; destinationDirspec=~/.config/autostart; desktopAutostart='X-GNOME-Autostart-enabled=true';;
 	--system-wide|-g)
-			addIconArgs+=("$1"); shift; isSystemWide=t; destinationDirspec=/usr/local/share/applications;;
+			addIconArgs+=("$1"); shift
+			isSystemWide=t
+			destinationDirspec=/usr/local/share/applications
+			[ -d "$destinationDirspec" ] || sudo mkdir -p -- "$destinationDirspec" || exit $?
+			;;
 	--destination|-d)
 			shift; destinationDirspec="${1:?}"; shift;;
 	--force|-f)	shift; isForce=t;;
