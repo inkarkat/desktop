@@ -53,6 +53,7 @@ HELPDESCRIPTION
 			instead of the start menu.
     --system-wide|-g	Install DESKTOP-ENTRY system-wide instead of only for
 			the current user. Same for a copied icon, too.
+			Will use sudo unless already running as the superuser.
     --destination|-d DESTINATION-DIR
 			Place the desktop entry into DESTINATION-DIR.
     --force|-f		Overwrite an existing desktop entry.
@@ -101,6 +102,7 @@ processIcon()
     fi
 }
 
+isSystemWide=
 desktopExec=
 desktopName=
 iconFilespec=
@@ -127,7 +129,7 @@ do
 	--category|-t)	shift; categoryList+=("$1"); shift;;
 	--autostart)	shift; destinationDirspec=~/.config/autostart; desktopAutostart='X-GNOME-Autostart-enabled=true';;
 	--system-wide|-g)
-			addIconArgs+=("$1"); shift; destinationDirspec=/usr/share/applications;;
+			addIconArgs+=("$1"); shift; isSystemWide=t; destinationDirspec=/usr/local/share/applications;;
 	--destination|-d)
 			shift; destinationDirspec="${1:?}"; shift;;
 	--force|-f)	shift; isForce=t;;
@@ -174,6 +176,10 @@ IFS=';'; [ -n "$desktopCategories" ] || desktopCategories="${categoryList[*]}"
 IFS="$saveIFS"
 
 export ${!desktop@}
-shelltemplate --target "$targetFilespec" -- "$templateFilespec" || exit $?
+if [ "$isSystemWide" ]; then
+    shelltemplate -- "$templateFilespec" | sudo tee -- "$targetFilespec" >/dev/null
+else
+    shelltemplate --target "$targetFilespec" -- "$templateFilespec"
+fi || exit $?
 
 [ -z "$iconFilespec" ] || acceptStatus 0 4 99 -- addIcon "${addIconArgs[@]}" --copy ${isForce:+--force} -- "$iconFilespec"
