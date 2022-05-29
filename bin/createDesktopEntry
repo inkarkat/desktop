@@ -12,7 +12,7 @@ printShortUsage()
 {
     # Note: short followed by long option; if the user knows the short one, she can
     # skim the long one.
-    printf 'Usage: %q %s\n' "$(basename "$1")" '-e|--exec COMMAND [-n|--name NAME] [-i|--icon ICON] [-c|--comment COMMENT] [-t|--category CATEGORY [-t ...]] [--autostart|-d|--destination DESTINATION-DIR] [-f|--force] [--target-name DESKTOP-ENTRY|DESKTOP-ENTRY] [-?|-h|--help]'
+    printf 'Usage: %q %s\n' "$(basename "$1")" '-e|--exec COMMAND [-n|--name NAME] [-i|--icon ICON] [-c|--comment COMMENT] [-t|--category CATEGORY [-t ...]] [--autostart|-g|--system-wide|-d|--destination DESTINATION-DIR] [-f|--force] [--target-name DESKTOP-ENTRY|DESKTOP-ENTRY] [-?|-h|--help]'
     printf 'Usage: %q %s\n' "$(basename "$1")" '-T|--template FILESPEC [...]'
     printf 'Usage: %q %s\n' "$(basename "$1")" '--check ...'
 }
@@ -43,14 +43,17 @@ HELPDESCRIPTION
 			environment variable expansion, wrap in sh -c "COMMAND"
     --name|-n NAME	Use NAME instead of deriving it from COMMAND.
     --icon|-i ICON	Use ICON; if this is a ./FILESPEC (not just a name),
-			copy it to user's application icon location and embed
-			just the name.
+			copy it to the application icon location and embed just
+			the name.
     --comment|-c COMMENT
 			Use COMMENT.
     --category|-t CATEGORY
 			Add CATEGORY to the categorization.
     --autostart		Put the desktop entry into the autostart directory
 			instead of the start menu.
+    --system-wide|-g	Install DESKTOP-ENTRY system-wide instead of only for
+			the current user. Same for a copied icon, too.
+			Will use sudo unless already running as the superuser.
     --destination|-d DESTINATION-DIR
 			Place the desktop entry into DESTINATION-DIR.
     --force|-f		Overwrite an existing desktop entry.
@@ -99,10 +102,12 @@ processIcon()
     fi
 }
 
+isSystemWide=
 desktopExec=
 desktopName=
 iconFilespec=
 desktopIcon="$CREATEDESKTOPENTRY_DEFAULT_ICON"
+typeset -a addIconArgs=()
 desktopComment=
 desktopCategories=
 typeset -a categoryList=()
@@ -123,6 +128,12 @@ do
 	--comment|-c)	shift; desktopComment="$1"; shift;;
 	--category|-t)	shift; categoryList+=("$1"); shift;;
 	--autostart)	shift; destinationDirspec=~/.config/autostart; desktopAutostart='X-GNOME-Autostart-enabled=true';;
+	--system-wide|-g)
+			addIconArgs+=("$1"); shift
+			isSystemWide=t
+			destinationDirspec=/usr/local/share/applications
+			[ -d "$destinationDirspec" ] || sudo mkdir -p -- "$destinationDirspec" || exit $?
+			;;
 	--destination|-d)
 			shift; destinationDirspec="${1:?}"; shift;;
 	--force|-f)	shift; isForce=t;;
@@ -157,7 +168,7 @@ targetFilespec="${destinationDirspec%/}/${desktopEntryName%.desktop}.desktop"
 
 if [ "$isCheck" ]; then
     [ -e "$targetFilespec" ] || exit 1
-    [ -z "$iconFilespec" ] || addIcon --check -- "$iconFilespec" || exit 1
+    [ -z "$iconFilespec" ] || addIcon --check "${addIconArgs[@]}" -- "$iconFilespec" || exit 1
     exit 0
 elif [ -e "$targetFilespec" ] && [ ! "$isForce" ]; then
     printf >&2 'ERROR: Desktop entry already exists at: %s\n' "$targetFilespec"
@@ -169,6 +180,10 @@ IFS=';'; [ -n "$desktopCategories" ] || desktopCategories="${categoryList[*]}"
 IFS="$saveIFS"
 
 export ${!desktop@}
-shelltemplate --target "$targetFilespec" -- "$templateFilespec" || exit $?
+if [ "$isSystemWide" ]; then
+    shelltemplate -- "$templateFilespec" | sudo tee -- "$targetFilespec" >/dev/null
+else
+    shelltemplate --target "$targetFilespec" -- "$templateFilespec"
+fi || exit $?
 
-[ -z "$iconFilespec" ] || acceptStatus 0 4 99 -- addIcon --copy ${isForce:+--force} -- "$iconFilespec"
+[ -z "$iconFilespec" ] || acceptStatus 0 4 99 -- addIcon "${addIconArgs[@]}" --copy ${isForce:+--force} -- "$iconFilespec"
