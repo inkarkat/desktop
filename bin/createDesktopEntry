@@ -60,7 +60,7 @@ HELPDESCRIPTION
     --target-name DESKTOP-ENTRY
 			The filename of the desktop entry to be created.
 
-RELATED COMMANDS:
+SEE ALSO:
 - addToStartMenu, addToAutostart, and addDesktopEntry can be used to install an
   existing desktop entry
 
