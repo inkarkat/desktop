@@ -17,9 +17,18 @@ case "$1" in
     --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
 esac
 
+hasFlashback()
+{
+    if [ -n "${XDG_SESSION_DESKTOP+t}" ]; then
+	[ "$XDG_SESSION_DESKTOP" = gnome-flashback-metacity ]
+    else
+	exists gnome-flashback
+    fi
+}
+
 defaultDisplayNumber=0
 < <(lsb_release -sr 2>/dev/null) IFS='.' read -r major minor
-[ ${major:-0} -ge 18 -a "$XDG_SESSION_DESKTOP" = gnome-flashback-metacity ] && \
+[ ${major:-0} -ge 18 ] && hasFlashback && \
     { [ ${major:-0} -ge 22 ] || [ $(pgrep --exact --count Xorg 2>/dev/null) -ge 2 ]; } && \
     defaultDisplayNumber=1
 
