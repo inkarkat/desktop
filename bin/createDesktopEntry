@@ -12,7 +12,7 @@ printShortUsage()
 {
     # Note: short followed by long option; if the user knows the short one, she can
     # skim the long one.
-    printf 'Usage: %q %s\n' "$(basename "$1")" '-e|--exec COMMAND [-n|--name NAME] [-i|--icon ICON] [-c|--comment COMMENT] [-t|--category CATEGORY [-t ...]] [--autostart|-g|--system-wide|-d|--destination DESTINATION-DIR] [-f|--force] [--target-name DESKTOP-ENTRY|DESKTOP-ENTRY] [-?|-h|--help]'
+    printf 'Usage: %q %s\n' "$(basename "$1")" '-e|--exec COMMAND|-c|--command COMMANDLINE [-n|--name NAME] [-i|--icon ICON] [-C|--comment COMMENT] [-t|--category CATEGORY [-t ...]] [--autostart|-g|--system-wide|-d|--destination DESTINATION-DIR] [-f|--force] [--target-name DESKTOP-ENTRY|DESKTOP-ENTRY] [-?|-h|--help]'
     printf 'Usage: %q %s\n' "$(basename "$1")" '-T|--template FILESPEC [...]'
     printf 'Usage: %q %s\n' "$(basename "$1")" '--check ...'
 }
@@ -41,11 +41,14 @@ HELPDESCRIPTION
 			arguments add or override certain properties.
     --exec|-e COMMAND	Execute COMMAND; for a complete command-line or
 			environment variable expansion, wrap in sh -c "COMMAND"
+    --command|-c COMMANDLINE
+			Execute COMMANDLINE through the (Posix) shell;
+			automatically adds the wrapping in sh -c "COMMANDLINE".
     --name|-n NAME	Use NAME instead of deriving it from COMMAND.
     --icon|-i ICON	Use ICON; if this is a ./FILESPEC (not just a name),
 			copy it to the application icon location and embed just
 			the name.
-    --comment|-c COMMENT
+    --comment|-C COMMENT
 			Use COMMENT.
     --category|-t CATEGORY
 			Add CATEGORY to the categorization.
@@ -123,9 +126,10 @@ do
 	--check)	shift; isCheck=t;;
 	--template|-T)	shift; readTemplate "$1" || exit 2; shift;;
 	--exec|-e)	shift; desktopExec="$1"; shift;;
+	--command|-c)	shift; desktopExec="sh -c $(printf %q "$1" | changeQuoting --posix)"; shift;;
 	--name|-n)	shift; desktopName="$1"; shift;;
 	--icon|-i)	shift; processIcon "$1"; shift;;
-	--comment|-c)	shift; desktopComment="$1"; shift;;
+	--comment|-C)	shift; desktopComment="$1"; shift;;
 	--category|-t)	shift; categoryList+=("$1"); shift;;
 	--autostart)	shift; destinationDirspec=~/.config/autostart; desktopAutostart='X-GNOME-Autostart-enabled=true';;
 	--system-wide|-g)
@@ -158,7 +162,7 @@ if [[ "$desktopEntryName" =~ / ]]; then
     printUsage "$0"
     exit 2
 elif [ -z "$desktopExec" ]; then
-    echo 'ERROR: No -T|--template or -e|--exec COMMAND passed.'
+    echo 'ERROR: No -T|--template or -e|--exec COMMAND or --c|--command COMMANDLINE passed.'
     echo
     printUsage "$0"
     exit 2
