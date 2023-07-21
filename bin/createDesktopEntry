@@ -147,7 +147,7 @@ do
 	*)		break;;
     esac
 done
-if [ -z "$desktopEntryName" -a $# -gt 1 ]; then
+if [ -z "$desktopEntryName" -a $# -ge 1 ]; then
     desktopEntryName="${1:?}"; shift
 fi
 if [ $# -ne 0 ]; then
