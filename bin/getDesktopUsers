@@ -1,0 +1,19 @@
+#!/bin/bash
+
+printUsage()
+{
+    cat <<HELPTEXT
+Print the user name(s) and display(s) of the user(s) who are currently logged in
+on the desktop.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-?|-h|--help]'
+}
+if [ $# -ne 0 ]; then
+    printUsage "$0" >&2
+    exit 2
+fi
+
+who --users \
+    | fieldGrep -e '^:[0-9]\+$' 2 \
+    | field 1 2
