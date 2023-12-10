@@ -1,0 +1,23 @@
+#!/bin/bash
+
+printUsage()
+{
+    cat <<HELPTEXT
+Show the GTK dialog according to the passed ZENITY-ARGS to each user that is
+currently logged in on the desktop.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" 'ZENITY-ARGS [...] [-?|-h|--help]'
+}
+if [ $# -eq 0 ]; then
+    printUsage "$0" >&2
+    exit 2
+fi
+
+status=
+while read -r username display
+do
+    sudo --user "$username" DISPLAY="$display" zenity "$@" \
+	&& : ${status:=0} || status=$?
+done < <(getDesktopUsers)
+exit ${status:-99}
