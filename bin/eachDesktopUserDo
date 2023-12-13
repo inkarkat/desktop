@@ -1,0 +1,138 @@
+#!/bin/bash
+# Source: https://github.com/hackerb9/notify-send-all
+
+printShortUsage()
+{
+    # Note: short followed by long option; if the user knows the short one, she can
+    # skim the long one.
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-o|--others|-u|--user USER [-u ...]] [-p|--prefix-with-user] -c|--command "COMMANDLINE" [-c ...] | [--] SIMPLECOMMAND [...] [-?|-h|--help]'
+}
+printUsage()
+{
+    # This is the short help when launched with no or incorrect arguments.
+    # It is printed to stderr to avoid accidental processing.
+    printShortUsage "$1" >&2
+    printf >&2 '\nTry %q --help for more information.\n' "$(basename "$1")"
+}
+printLongUsage()
+{
+    # This is the long "man page" when launched with the help argument.
+    # It is printed to stdout to allow paging with 'more'.
+    cat <<HELPDESCRIPTION
+Execute COMMAND on the desktop of all users logged into a machine,
+asynchronously.
+HELPDESCRIPTION
+    echo
+    printShortUsage "$1"
+    echo
+    cat <<HELPTEXT
+    --others|-o		Skip the current user; only execute CMD for other users.
+    --user|-u USER	Only execute CMD for USER.
+    --prefix-with-user|-p
+			Any COMMAND [error] output is prefixed with the username
+			and a tab.
+    --command|-c CMD	Execute CMD as a command-line.
+
+EXIT STATUS:
+    0	Complete success. The exit status from each CMD invocation is lost.
+    2	Bad invocation, wrong or missing command-line arguments.
+    99	No other users, no matching USER(s).
+HELPTEXT
+}
+
+typeset -a allargs=("$@")
+isLaunch=
+userName=
+userId=
+typeset -a userFilter=()
+isPrefixWithUser=
+isNeedEval=
+typeset -a commands=()
+while [ $# -ne 0 ]
+do
+    case "$1" in
+	--help|-h|-\?)	shift; printLongUsage "$0"; exit 0;;
+	--launch)	shift; userName="${1:?}"; shift; userId="${1:?}"; shift; isLaunch=t;;
+	--others|-o)	shift; userFilter=(grep --invert-match --fixed-strings --line-regexp -e "${USER:?}");;
+	--user|-u)	shift
+			[ ${#userFilter[@]} -eq 0 ] \
+			    && userFilter=(grep --fixed-strings --line-regexp -e "${1:?}") \
+			    || userFilter+=(-e "${1:?}")
+			shift
+			;;
+	--prefix-with-user|-p)
+			shift; isPrefixWithUser=t;;
+	--command|-c)	shift; commands+=(${commands:+;} "$1"); isNeedEval=t; shift;;
+	--)		shift; break;;
+	-*)		{ echo "ERROR: Unknown option \"$1\"!"; echo; printUsage "$0"; } >&2; exit 2;;
+	*)		break;;
+    esac
+done
+if [ $# -ne 0 ]; then
+    if [ "$isNeedEval" ]; then
+	# Combine --command and SIMPLECOMMAND; need to quote SIMPLECOMMAND to
+	# undo the effects of eval.
+	printf -v quotedSimpleCommand '%q ' "$@"
+	commands+=(${commands:+;} "${quotedSimpleCommand% }")
+    else
+	commands=("$@")
+    fi
+fi
+if [ ${#commands[@]} -eq 0 ]; then
+    echo 'ERROR: No COMMAND(s) specified; need to pass -c|--command "COMMANDLINE", or SIMPLECOMMAND.'
+    echo
+    printUsage "$0"
+    exit 2
+fi >&2
+
+execute()
+{
+    if [ "$isNeedEval" ]; then
+	eval "${commands[@]}"
+    else
+	"${commands[@]}"
+    fi
+}
+
+if [ "$isLaunch" ]; then
+    # Recursive callee implementation.
+    busroute="/run/user/${userId}/bus"
+
+    if [ ! -e "$busroute" ]; then
+	printf >&2 'ERROR: Cannot find desktop for %s; no bus at %s\n' "$userName" "$busroute"
+	exit 3
+    fi
+
+    export DBUS_SESSION_BUS_ADDRESS="unix:path=$busroute"
+    if [ "$isPrefixWithUser" ]; then
+	{ execute 3>&1 1>&2 2>&3 3>&- | sed "s/^/${userName}\t/"; } 3>&1 1>&2 2>&3 3>&- | sed "s/^/${userName}\t/"
+    else
+	execute
+    fi
+
+    exit $?
+fi
+
+executeFor()
+{
+    local userName="${1:?}"; shift
+    local userId; userId="$(id -u "$userName")" || exit 3
+    sudo --user "$userName" PATH="$PATH" -- \
+	"${BASH_SOURCE[0]}" --launch "$userName" "$userId" "${allargs[@]}" &
+}
+
+readarray -t users < <(
+    who --users \
+	| cut -f1 -d' ' \
+	| eval 'sort --unique' \
+	"${userFilter:+|}" '"${userFilter[@]}"'
+)
+if [ ${#users[@]} -eq 0 ]; then
+    exit 99
+fi
+
+for userName in "${users[@]}"
+do
+    executeFor "$userName"
+done
+wait
