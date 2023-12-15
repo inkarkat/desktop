@@ -1,0 +1,20 @@
+#!/bin/bash
+
+printUsage()
+{
+    notify-send-all --help 2>&1 | sed \
+	-e '1s#^.*$#Send a desktop notification to all other users (i.e. except yourself) logged into the machine. Similar to the wall command, but for graphical logins (X \& Wayland).#' \
+	-e '2b removeFirstParagraphLoop' \
+	-e '/^ *\(--others|-o\|--user|-u\)/b removeOptionLoop' \
+	-e '/^Usage:$/N' -e '/\(^\|\n\)Usage: */{ s/\(^\|\n\)\(Usage: *\)\?\([^ ]\+ \)*notify-send-all /\1\2'"$(basename "$1")"' /; s/\[-o|--others|-u|--user USER \[-u \.\.\.\]\] //; }' \
+	-e b -e :removeFirstParagraphLoop -e '{ /\(^\|\n\)$/{ s/^\(.*\n\)\?//; b; }; N; b removeFirstParagraphLoop; }' \
+	-e b -e :removeOptionLoop -e '{ /\n *\(--others|-o\|--user|-u\)[^\n]*$/{ N; b removeOptionLoop; }; /\n *--[^\n]*$\|\n[^	 ]\|\n$/{ s/^\(.*\n\)\?//; b; }; N; b removeOptionLoop; }'
+}
+typeset -a notifysendallArgs=()
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+    --prefix-with-user|-p)
+			notifysendallArgs+=("$1"); shift;;
+esac
+
+exec notify-send-all --others "${notifysendallArgs[@]}" "$@"

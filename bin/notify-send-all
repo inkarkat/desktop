@@ -1,0 +1,35 @@
+#!/bin/bash
+shopt -qs extglob
+
+printUsage()
+{
+    eachDesktopUserDo --help 2>&1 | sed \
+	-e '1s#^.*$#Send a desktop notification to all users logged into the machine. Similar to the wall command, but for graphical logins (X \& Wayland).#' \
+	-e '2b removeFirstParagraphLoop' \
+	-e 's/\<CMD\>\|\<COMMAND\>/notify-send/g' \
+	-e '/^ *--command|-c/b removeOptionLoop' \
+	-e '/^Usage:$/N' -e '/\(^\|\n\)Usage: */{ s/\(^\|\n\)\(Usage: *\)\?\([^ ]\+ \)*eachDesktopUserDo /\1\2'"$(basename "$1")"' /; s/-c|--command "COMMANDLINE" \[-c \.\.\.\] | \[--\] SIMPLECOMMAND/NOTIFY-SEND-ARGS/; }' \
+	-e b -e :removeFirstParagraphLoop -e '{ /\(^\|\n\)$/{ s/^\(.*\n\)\?//; b; }; N; b removeFirstParagraphLoop; }' \
+	-e b -e :removeOptionLoop -e '{ /\n *--command|-c[^\n]*$/{ N; b removeOptionLoop; }; /\n *--[^\n]*$\|\n[^	 ]\|\n$/{ s/^\(.*\n\)\?//; b; }; N; b removeOptionLoop; }'
+}
+typeset -a eachDesktopUserDoArgs=()
+while [ $# -ne 0 ]
+do
+    case "$1" in
+	--help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+
+	-+([op]))	eachDesktopUserDoArgs+=("$1"); shift;;
+	--@(others|prefix-with-user))
+			eachDesktopUserDoArgs+=("$1"); shift;;
+	-[u])		eachDesktopUserDoArgs+=("$1" "${2?}"); shift; shift;;
+	--@(user))	eachDesktopUserDoArgs+=("$1" "${2?}"); shift; shift;;
+	--)		shift; break;;
+	*)		break;;
+    esac
+done
+if [ $# -eq 0 ]; then
+    printUsage "$0" >&2
+    exit 2
+fi
+
+exec eachDesktopUserDo "${eachDesktopUserDoArgs[@]}" -- notify-send "$@"
