@@ -118,7 +118,7 @@ executeFor()
     local userName="${1:?}"; shift
     local display="${1:?}"; shift
     local userId; userId="$(id -u "$userName")" || exit 3
-    sudo --user "$userName" DISPLAY="$display" -- \
+    sudo --user "$userName" --set-home DISPLAY="$display" -- \
 	"${BASH_SOURCE[0]}" --launch "$userName" "$userId" "${allargs[@]}" &
 }
 
