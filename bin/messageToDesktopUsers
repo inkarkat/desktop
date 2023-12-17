@@ -41,6 +41,7 @@ if [ $# -ne 0 -o -z "$title" -o -z "$message" ]; then
     exit 2
 fi
 
+typeset -a soundCommandArgs=()	# Command arguments for withUnixhome.
 addSoundCommand()
 {
     local what="${1:?}"; shift
@@ -52,12 +53,19 @@ addSoundCommand()
 
     printf -v quotedCommand '%q ' "$@"
     [ "$isAsync" ] \
-	&& soundCommands+=(--command "{ ${quotedCommand% } &}") \
-	|| soundCommands+=(--command "${quotedCommand% }")
+	&& soundCommandArgs+=(--command "{ ${quotedCommand% } &}") \
+	|| soundCommandArgs+=(--command "${quotedCommand% }")
 }
 
-addSoundCommand 'play notification sound' '' "$(command -v playsound)" "$notificationSoundFilespec"
+addSoundCommand 'play notification sound' '' playsound "$notificationSoundFilespec"
 [ ! "$isSpeak" ] \
-    || addSoundCommand 'speak message' t "$(command -v speak)" "${speakArgs[@]}" "${title}: ${message}"
+    || addSoundCommand 'speak message' t speak "${speakArgs[@]}" "${title}: ${message}"
+typeset -a soundCommands=()
+if [ ${#soundCommandArgs[@]} -gt 0 ]; then
+    # We need to use withUnixhome so that my custom commands can be found and the
+    # path to the notificationSoundFilespec is adapted to Unixhome-access.
+    printf -v quotedSoundCommandArgs ' %q' "${soundCommandArgs[@]}"
+    soundCommands=(--command "withUnixhome${quotedSoundCommandArgs}")
+fi
 
 exec eachDesktopUserDo "${soundCommands[@]}" -- zenity --info "${zenityArgs[@]}"
