@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# XXX: Unfortunately, there's no API to clear all notifications, and currently
+# active notifications cannot be queried; we'd have to monitor the submission
+# and record their IDs (as modifying all clients to record their own
+# notifications' IDs is not possible, either).
+# Fortunately, it appears that IDs are monotonically increasing (since login?),
+# so we can just try to clear a range of IDs, starting from the last one we saw,
+# and then record the highest seen number as the starting point for the next
+# invocation.
+: ${CLEARNOTIFICATIONS_RANGE:=100}
+
+readonly lastNotificationIdFilespec="${XDG_RUNTIME_DIR:?}/clearNotifications"
+lastNotificationId=-1; [ -r "$lastNotificationIdFilespec" ] && < "$lastNotificationIdFilespec" IFS=$'\t' read -r lastNotificationId
+
+let clearedNotificationCnt=0
+for ((i = 1; i <= CLEARNOTIFICATIONS_RANGE; i++))
+do
+    let id=lastNotificationId+i
+    if gdbus call \
+	--session \
+	--dest org.freedesktop.Notifications \
+	--object-path /org/freedesktop/Notifications \
+	--method org.freedesktop.Notifications.CloseNotification \
+	$id >/dev/null 2>&1
+    then
+	let clearedNotificationCnt+=1
+	lastNotificationId=$id
+    fi
+done
+if [ $clearedNotificationCnt -eq 0 ]; then
+    echo >&2 'No notifications found.'
+    exit 99
+fi
+countPlural=s; [ $clearedNotificationCnt -eq 1 ] && countPlural=
+printf 'Cleared %d notification%s.\n' $clearedNotificationCnt "$countPlural"
+printf '%d\n' "$lastNotificationId" > "$lastNotificationIdFilespec"
