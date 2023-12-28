@@ -14,7 +14,7 @@ Show an information dialog to each user that is currently logged in on the
 desktop, indicate this with a sound, and optionally speak the message, too.
 HELPTEXT
     echo
-    printf 'Usage: %q %s\n' "$(basename "$1")" '[-t|--title TITLE] [--timeout SECONDS] [-m|--message MESSAGE] [--speak [-v|--voice VOICE-NAME]] [-?|-h|--help]'
+    printf 'Usage: %q %s\n' "$(basename "$1")" '-t|--title TITLE -m|--message MESSAGE [--timeout SECONDS] [--speak [-v|--voice VOICE-NAME]] [-?|-h|--help]'
 }
 
 title=
