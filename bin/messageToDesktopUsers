@@ -6,15 +6,18 @@ readonly scriptDir="$([ "${BASH_SOURCE[0]}" ] && dirname -- "${BASH_SOURCE[0]}" 
 readonly projectDir="${scriptDir}/.."
 readonly libDir="${projectDir}/lib/$(basename -- "${BASH_SOURCE[0]}")"
 readonly notificationSoundFilespec="${libDir}/notification.wav"
+readonly scriptName="$(basename -- "${BASH_SOURCE[0]}")"
 
 printUsage()
 {
     cat <<HELPTEXT
 Show an information dialog to each user that is currently logged in on the
 desktop, indicate this with a sound, and optionally speak the message, too.
+Users can customize the notification sound via a file
+~/.config/messageToDesktopUsers.{mp3,ogg,wav}
 HELPTEXT
     echo
-    printf 'Usage: %q %s\n' "$(basename "$1")" '[-t|--title TITLE] [--timeout SECONDS] [-m|--message MESSAGE] [--speak [-v|--voice VOICE-NAME]] [-?|-h|--help]'
+    printf 'Usage: %q %s\n' "$(basename "$1")" '-t|--title TITLE -m|--message MESSAGE [--timeout SECONDS] [--speak [-v|--voice VOICE-NAME]] [-?|-h|--help]'
 }
 
 title=
@@ -26,7 +29,7 @@ while [ $# -ne 0 ]
 do
     case "$1" in
 	--help|-h|-\?)	shift; printUsage "$0"; exit 0;;
-	--title|-t)	zenityArgs+=("$1" "${2:?}"); shift; title="$1"; shift;;
+	--title|-t)	shift; zenityArgs+=(--title "${1:?}"); title="$1"; shift;;
 	--timeout)	zenityArgs+=("$1" "${2:?}"); shift; shift;;
 	--message|-m)	shift; zenityArgs+=(--text "${1:?}"); message="$1"; shift;;
 	--speak)	shift; isSpeak=t;;
@@ -57,7 +60,7 @@ addSoundCommand()
 	|| soundCommandArgs+=(--command "${quotedCommand% }")
 }
 
-addSoundCommand 'play notification sound' '' playsound "$notificationSoundFilespec"
+addSoundCommand 'play notification sound' '' withFirstExistingFile playsound -- ".config/${scriptName}".{mp3,ogg,wav} "$notificationSoundFilespec"
 [ ! "$isSpeak" ] \
     || addSoundCommand 'speak message' t speak "${speakArgs[@]}" "${title}: ${message}"
 typeset -a soundCommands=()
