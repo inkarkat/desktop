@@ -10,6 +10,22 @@
 # invocation.
 : ${CLEARNOTIFICATIONS_RANGE:=100}
 
+printUsage()
+{
+    cat <<HELPTEXT
+Clear all (recent) desktop notifications.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-?|-h|--help]'
+}
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+esac
+if [ $# -ne 0 ]; then
+    printUsage "$0" >&2
+    exit 2
+fi
+
 readonly lastNotificationIdFilespec="${XDG_RUNTIME_DIR:?}/clearNotifications"
 lastNotificationId=-1; [ -r "$lastNotificationIdFilespec" ] && < "$lastNotificationIdFilespec" IFS=$'\t' read -r lastNotificationId
 
