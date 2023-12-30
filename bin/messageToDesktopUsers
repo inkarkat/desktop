@@ -60,7 +60,7 @@ addSoundCommand()
 	|| soundCommandArgs+=(--command "${quotedCommand% }")
 }
 
-addSoundCommand 'play notification sound' '' withFirstExistingFile playsound -- ".config/${scriptName}".{mp3,ogg,wav} "$notificationSoundFilespec"
+addSoundCommand 'play notification sound' '' withFirstExistingFile playsound -- "/home/${TARGET_USER}/.config/${scriptName}".{mp3,ogg,wav} "$notificationSoundFilespec"
 [ ! "$isSpeak" ] \
     || addSoundCommand 'speak message' t speak "${speakArgs[@]}" "${title}: ${message}"
 typeset -a soundCommands=()
