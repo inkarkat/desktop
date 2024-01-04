@@ -26,28 +26,63 @@ if [ $# -ne 0 ]; then
     exit 2
 fi
 
+notificationCall()
+{
+    gdbus call \
+	    --session \
+	    --dest org.freedesktop.Notifications \
+	    --object-path /org/freedesktop/Notifications \
+	    "$@"
+}
+
+sendDummyNotification()
+{
+    local -r scriptName="$(basename -- "${BASH_SOURCE[0]}")"
+    local dummyOutput="$(notificationCall --method org.freedesktop.Notifications.Notify "$scriptName" 0 utilities-terminal 'Ignore' 'Dummy message; please ignore.' [] {} 0)"
+    [[ "$dummyOutput" =~ ^\(uint32\ ([0-9]+),\)$ ]] \
+	&& printf %s "${BASH_REMATCH[1]}"
+}
+
+let clearedNotificationCnt=0
+clearRangeFrom()
+{
+    local startId="${1:?}"; shift
+    local i id
+    for ((i = 1; i <= CLEARNOTIFICATIONS_RANGE; i++))
+    do
+	let id=startId+i
+	if notificationCall --method org.freedesktop.Notifications.CloseNotification $id >/dev/null 2>&1; then
+	    let clearedNotificationCnt+=1
+	    lastNotificationId=$id
+	fi
+    done
+
+    [ $clearedNotificationCnt -gt 0 ]
+}
+clearRangeUntil()
+{
+    local endId="${1:?}"; shift
+    let startId=$((endId - CLEARNOTIFICATIONS_RANGE))
+    clearRangeFrom $((startId < 0 ? -1 : startId))
+}
+
 readonly lastNotificationIdFilespec="${XDG_RUNTIME_DIR:?}/clearNotifications"
 lastNotificationId=-1; [ -r "$lastNotificationIdFilespec" ] && < "$lastNotificationIdFilespec" IFS=$'\t' read -r lastNotificationId
 
-let clearedNotificationCnt=0
-for ((i = 1; i <= CLEARNOTIFICATIONS_RANGE; i++))
-do
-    let id=lastNotificationId+i
-    if gdbus call \
-	--session \
-	--dest org.freedesktop.Notifications \
-	--object-path /org/freedesktop/Notifications \
-	--method org.freedesktop.Notifications.CloseNotification \
-	$id >/dev/null 2>&1
-    then
-	let clearedNotificationCnt+=1
-	lastNotificationId=$id
+if ! clearRangeFrom "$lastNotificationId"; then
+    if newId="$(sendDummyNotification)"; then
+	case ",${DEBUG:-}," in *,clearNotifications,*) printf >&2 '%sclearNotifications: New ID is %d\n' "$PS4" $newId;; esac
+	clearRangeUntil "$newId"
     fi
-done
+fi
 if [ $clearedNotificationCnt -eq 0 ]; then
     echo >&2 'No notifications found.'
+    case ",${DEBUG:-}," in *,clearNotifications,*) printf >&2 '%sclearNotifications: Tried ID range of %d...%d\n' "$PS4" $lastNotificationId $((lastNotificationId + CLEARNOTIFICATIONS_RANGE));; esac
+
+    sendDummyNotification
     exit 99
 fi
+
 countPlural=s; [ $clearedNotificationCnt -eq 1 ] && countPlural=
 printf 'Cleared %d notification%s.\n' $clearedNotificationCnt "$countPlural"
 printf '%d\n' "$lastNotificationId" > "$lastNotificationIdFilespec"
