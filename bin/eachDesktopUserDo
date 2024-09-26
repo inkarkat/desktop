@@ -35,6 +35,10 @@ HELPDESCRIPTION
 			and a tab.
     --command|-c CMD	Execute CMD as a command-line.
 
+SEE ALSO:
+- eachOtherUserDo executes a command for each per actual regular user defined on
+  the system.
+
 EXIT STATUS:
     0	Complete success. The exit status from each CMD invocation is lost.
     2	Bad invocation, wrong or missing command-line arguments.
