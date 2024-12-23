@@ -66,7 +66,7 @@ clearRangeUntil()
     clearRangeFrom $((startId < 0 ? -1 : startId))
 }
 
-readonly lastNotificationIdFilespec="${XDG_RUNTIME_DIR:?}/clearNotifications"
+readonly lastNotificationIdFilespec="${XDG_RUNTIME_DIR:-/tmp}/clearNotifications"
 lastNotificationId=-1; [ -r "$lastNotificationIdFilespec" ] && < "$lastNotificationIdFilespec" IFS=$'\t' read -r lastNotificationId
 
 if ! clearRangeFrom "$lastNotificationId"; then
