@@ -1,0 +1,21 @@
+#!/bin/bash
+
+printUsage()
+{
+    cat <<HELPTEXT
+Print the desktop scaling factor.
+HELPTEXT
+    echo
+    printf 'Usage: %q %s\n' "$(basename "$1")" '[-?|-h|--help]'
+}
+
+case "$1" in
+    --help|-h|-\?)	shift; printUsage "$0"; exit 0;;
+esac
+if [ $# -ne 0 ]; then
+    printUsage "$0" >&2
+    exit 2
+fi
+
+gdbus call --session --dest org.gnome.Mutter.DisplayConfig --object-path /org/gnome/Mutter/DisplayConfig --method org.gnome.Mutter.DisplayConfig.GetCurrentState \
+    | sed -ne "s/.*'legacy-ui-scaling-factor': <\\([0-9]\\+\\)>.*/\\1/p"
