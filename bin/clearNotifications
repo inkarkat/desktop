@@ -71,13 +71,13 @@ lastNotificationId=-1; [ -r "$lastNotificationIdFilespec" ] && < "$lastNotificat
 
 if ! clearRangeFrom "$lastNotificationId"; then
     if newId="$(sendDummyNotification)"; then
-	case ",${DEBUG:-}," in *,clearNotifications,*) printf >&2 '%sclearNotifications: New ID is %d\n' "$PS4" $newId;; esac
+	${DEBUG:+debuglogf 'New ID is %d' $newId}
 	clearRangeUntil "$newId"
     fi
 fi
 if [ $clearedNotificationCnt -eq 0 ]; then
     echo >&2 'No notifications found.'
-    case ",${DEBUG:-}," in *,clearNotifications,*) printf >&2 '%sclearNotifications: Tried ID range of %d...%d\n' "$PS4" $lastNotificationId $((lastNotificationId + CLEARNOTIFICATIONS_RANGE));; esac
+    ${DEBUG:+debuglogf 'Tried ID range of %d...%d' $lastNotificationId $((lastNotificationId + CLEARNOTIFICATIONS_RANGE))}
 
     sendDummyNotification
     exit 99
