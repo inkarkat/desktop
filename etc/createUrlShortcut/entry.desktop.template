@@ -1,0 +1,7 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=$desktopName${desktopComment:+
+Comment=}$desktopComment
+Type=Link
+URL=$desktopUrl
+Icon=$desktopIcon
